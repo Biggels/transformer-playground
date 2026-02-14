@@ -1,0 +1,33 @@
+[project]
+name = "transformer-playground"
+version = "0.1.0"
+description = "Configurable transformer playground for local experiments"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "torch>=2.1",
+  "sentencepiece>=0.2.0",
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+tp = "transformer_playground.cli:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
