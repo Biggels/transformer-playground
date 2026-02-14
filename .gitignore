@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+# Virtual environments
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Local experiment outputs
+runs/
+
+# Model/tokenizer artifacts
+*.pt
+*.pth
+*.ckpt
+*.model
+*.vocab
+
+# IDE/editor
+.vscode/
+.idea/
+.DS_Store
