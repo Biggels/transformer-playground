@@ -53,6 +53,16 @@ If omitted, sampling flags default to the checkpoint run's saved config.
 The command prints a summary and saves full JSON to:
 - `runs/<run_id>/reports/report-<checkpoint>-<timestamp>.json`
 
+## Plot train/val loss
+Create an SVG curve from `metrics.jsonl`:
+```bash
+tp plot-loss --runs-dir runs --run-id <RUN_ID>
+```
+
+Options:
+- `--out <path>` custom output path
+- `--log-y` use log scale on y-axis (useful when val loss explodes)
+
 ## Run artifacts
 Each training run writes:
 - `runs/<run_id>/config.json`

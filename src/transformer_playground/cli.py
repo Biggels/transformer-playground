@@ -5,6 +5,7 @@ from pathlib import Path
 
 from transformer_playground.config import apply_overrides, load_config
 from transformer_playground.infer import compare_runs, generate_text, resolve_run_path
+from transformer_playground.plotting import save_loss_plot
 from transformer_playground.report import build_report
 from transformer_playground.train import run_training
 
@@ -47,6 +48,13 @@ def main() -> None:
     p_report.add_argument("--n-samples", type=int, default=200)
     p_report.add_argument("--eval-batches", type=int, default=32)
     _common_sampling_args(p_report)
+
+    p_plot = sub.add_parser("plot-loss")
+    p_plot.add_argument("--run-id", type=str, required=True)
+    p_plot.add_argument("--runs-dir", type=str, default="runs")
+    p_plot.add_argument("--out", type=str, default=None)
+    p_plot.add_argument("--title", type=str, default=None)
+    p_plot.add_argument("--log-y", action="store_true")
 
     args = parser.parse_args()
 
@@ -129,6 +137,17 @@ def main() -> None:
         )
         if out_path is not None:
             print(f"saved_report: {out_path}")
+        return
+
+    if args.cmd == "plot-loss":
+        run_path = resolve_run_path(args.runs_dir, args.run_id)
+        out_path = save_loss_plot(
+            run_path=run_path,
+            out_path=args.out,
+            title=args.title,
+            log_y=args.log_y,
+        )
+        print(f"saved_plot: {out_path}")
 
 
 if __name__ == "__main__":
