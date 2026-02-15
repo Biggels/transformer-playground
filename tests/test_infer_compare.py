@@ -28,6 +28,8 @@ def _make_run(tmp_path: Path, seed: int) -> Path:
     cfg.train.eval_batches = 1
     cfg.train.log_interval = 1
     cfg.train.sample_interval = 1
+    cfg.tracking.auto_report = False
+    cfg.tracking.auto_plot_loss = False
 
     return run_training(cfg)
 

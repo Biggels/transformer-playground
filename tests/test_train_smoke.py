@@ -26,6 +26,8 @@ def test_train_smoke(tmp_path: Path):
     cfg.train.eval_batches = 1
     cfg.train.log_interval = 1
     cfg.train.sample_interval = 1
+    cfg.tracking.auto_report = False
+    cfg.tracking.auto_plot_loss = False
 
     run_dir = run_training(cfg)
 

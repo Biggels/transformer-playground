@@ -1,11 +1,10 @@
 from pathlib import Path
 
 from transformer_playground.config import ExperimentConfig
-from transformer_playground.report import build_report
 from transformer_playground.train import run_training
 
 
-def _make_run(tmp_path: Path) -> Path:
+def test_auto_report_and_plot_generated(tmp_path: Path):
     phrases = tmp_path / "phrases.txt"
     phrases.write_text("alpha beta\nbeta gamma\ngamma delta\ndelta alpha\n", encoding="utf-8")
 
@@ -13,8 +12,8 @@ def _make_run(tmp_path: Path) -> Path:
     cfg.data.phrases_path = str(phrases)
     cfg.tracking.runs_dir = str(tmp_path / "runs")
     cfg.runtime.device = "cpu"
-    cfg.tokenizer.vocab_size = 32
 
+    cfg.tokenizer.vocab_size = 32
     cfg.model.d_model = 32
     cfg.model.n_layers = 2
     cfg.model.n_heads = 4
@@ -27,27 +26,17 @@ def _make_run(tmp_path: Path) -> Path:
     cfg.train.eval_batches = 1
     cfg.train.log_interval = 1
     cfg.train.sample_interval = 1
-    cfg.tracking.auto_report = False
-    cfg.tracking.auto_plot_loss = False
 
-    return run_training(cfg)
+    cfg.tracking.auto_plot_loss = True
+    cfg.tracking.auto_plot_log_y = True
+    cfg.tracking.auto_report = True
+    cfg.tracking.auto_report_n_samples = 4
+    cfg.tracking.auto_report_eval_batches = 1
+    cfg.tracking.auto_report_unconditional = True
 
+    run_dir = run_training(cfg)
 
-def test_build_report(tmp_path: Path):
-    run_dir = _make_run(tmp_path)
-    report, out_path = build_report(
-        run_path=run_dir,
-        prompt=None,
-        n_samples=5,
-        max_new_tokens=4,
-        temperature=1.0,
-        top_p=1.0,
-        checkpoint_name="best_val.pt",
-        eval_batches=1,
-        save=True,
-    )
-    assert "metrics" in report
-    assert "eval" in report
-    assert len(report["samples"]) == 5
-    assert out_path is not None
-    assert out_path.exists()
+    assert (run_dir / "post_run_artifacts.json").exists()
+    reports_dir = run_dir / "reports"
+    assert any(p.name.startswith("report-") and p.suffix == ".json" for p in reports_dir.iterdir())
+    assert any(p.name.startswith("loss-curve-") and p.suffix == ".svg" for p in reports_dir.iterdir())

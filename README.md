@@ -72,3 +72,13 @@ Each training run writes:
 - `runs/<run_id>/checkpoints/last.pt`
 - `runs/<run_id>/tokenizer/spm.model`
 - `runs/<run_id>/summary.json`
+
+By default, training also auto-generates:
+- `runs/<run_id>/reports/loss-curve-<timestamp>.svg`
+- `runs/<run_id>/reports/report-best_val-<timestamp>.json`
+- `runs/<run_id>/post_run_artifacts.json`
+
+Disable with config overrides:
+```bash
+tp train --config configs/default.py --set tracking.auto_plot_loss=false --set tracking.auto_report=false
+```

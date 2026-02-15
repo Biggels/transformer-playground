@@ -82,6 +82,13 @@ class RuntimeConfig:
 class TrackingConfig:
     runs_dir: str = "runs"
     save_best_only: bool = False
+    auto_plot_loss: bool = True
+    auto_plot_log_y: bool = True
+    auto_report: bool = True
+    auto_report_n_samples: int = 200
+    auto_report_eval_batches: int = 32
+    auto_report_unconditional: bool = True
+    auto_report_prompt: str = "a"
 
 
 @dataclass

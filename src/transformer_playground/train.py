@@ -170,4 +170,38 @@ def run_training(cfg: ExperimentConfig) -> Path:
         },
     )
 
+    # Auto-generate post-run analysis artifacts for quick experiment review.
+    post_artifacts: dict[str, str] = {}
+    if cfg.tracking.auto_plot_loss:
+        from transformer_playground.plotting import save_loss_plot
+
+        plot_path = save_loss_plot(
+            run_path=run_dir,
+            out_path=None,
+            title=None,
+            log_y=cfg.tracking.auto_plot_log_y,
+        )
+        post_artifacts["loss_plot"] = str(plot_path)
+
+    if cfg.tracking.auto_report:
+        from transformer_playground.report import build_report
+
+        prompt = None if cfg.tracking.auto_report_unconditional else cfg.tracking.auto_report_prompt
+        _, report_path = build_report(
+            run_path=run_dir,
+            prompt=prompt,
+            n_samples=cfg.tracking.auto_report_n_samples,
+            max_new_tokens=None,
+            temperature=None,
+            top_p=None,
+            checkpoint_name="best_val.pt",
+            eval_batches=cfg.tracking.auto_report_eval_batches,
+            save=True,
+        )
+        if report_path is not None:
+            post_artifacts["report"] = str(report_path)
+
+    if post_artifacts:
+        save_json(run_dir / "post_run_artifacts.json", post_artifacts)
+
     return run_dir
