@@ -40,6 +40,9 @@ def test_generate_and_compare(tmp_path: Path):
     assert isinstance(text, str)
     assert len(text) > 0
 
+    free_text = generate_text(run1, prompt=None, max_new_tokens=4, temperature=1.0, top_p=1.0)
+    assert isinstance(free_text, str)
+
     rows = compare_runs(
         [run1, run2],
         prompt="alpha",

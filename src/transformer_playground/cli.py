@@ -26,13 +26,15 @@ def main() -> None:
     p_gen = sub.add_parser("generate")
     p_gen.add_argument("--run-id", type=str, required=True)
     p_gen.add_argument("--runs-dir", type=str, default="runs")
-    p_gen.add_argument("--prompt", type=str, required=True)
+    p_gen.add_argument("--prompt", type=str, default=None)
+    p_gen.add_argument("--unconditional", action="store_true")
     _common_sampling_args(p_gen)
 
     p_cmp = sub.add_parser("compare")
     p_cmp.add_argument("--run-ids", type=str, required=True, help="Comma-separated run ids")
     p_cmp.add_argument("--runs-dir", type=str, default="runs")
-    p_cmp.add_argument("--prompt", type=str, required=True)
+    p_cmp.add_argument("--prompt", type=str, default=None)
+    p_cmp.add_argument("--unconditional", action="store_true")
     p_cmp.add_argument("--n-samples", type=int, default=3)
     _common_sampling_args(p_cmp)
 
@@ -47,9 +49,12 @@ def main() -> None:
 
     if args.cmd == "generate":
         run_path = resolve_run_path(args.runs_dir, args.run_id)
+        prompt = None if args.unconditional else args.prompt
+        if prompt is None and not args.unconditional:
+            parser.error("generate requires --prompt or --unconditional")
         text = generate_text(
             run_path,
-            prompt=args.prompt,
+            prompt=prompt,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature,
             top_p=args.top_p,
@@ -59,10 +64,13 @@ def main() -> None:
         return
 
     if args.cmd == "compare":
+        prompt = None if args.unconditional else args.prompt
+        if prompt is None and not args.unconditional:
+            parser.error("compare requires --prompt or --unconditional")
         run_paths = [resolve_run_path(args.runs_dir, rid.strip()) for rid in args.run_ids.split(",") if rid.strip()]
         rows = compare_runs(
             [str(p) for p in run_paths],
-            prompt=args.prompt,
+            prompt=prompt,
             n_samples=args.n_samples,
             max_new_tokens=args.max_new_tokens,
             temperature=args.temperature,

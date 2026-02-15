@@ -34,7 +34,7 @@ def load_artifacts(run_path: str | Path, checkpoint_name: str = "best_val.pt") -
 
 def generate_text(
     run_path: str | Path,
-    prompt: str,
+    prompt: str | None,
     max_new_tokens: int,
     temperature: float,
     top_p: float,
@@ -42,7 +42,8 @@ def generate_text(
 ) -> str:
     cfg, model, tokenizer, device = load_artifacts(run_path, checkpoint_name=checkpoint_name)
     del cfg
-    x = torch.tensor([tokenizer.encode(prompt)], dtype=torch.long, device=device)
+    seed_ids = tokenizer.encode(prompt) if prompt else [tokenizer.eos_id]
+    x = torch.tensor([seed_ids], dtype=torch.long, device=device)
     y = model.generate(
         x,
         max_new_tokens=max_new_tokens,
@@ -50,12 +51,18 @@ def generate_text(
         top_p=top_p,
         eos_token_id=tokenizer.eos_id,
     )
-    return tokenizer.decode(y[0].tolist())
+    out_ids = y[0].tolist()
+    if not prompt:
+        completion = out_ids[len(seed_ids) :]
+        if completion and completion[-1] == tokenizer.eos_id:
+            completion = completion[:-1]
+        return tokenizer.decode(completion).strip()
+    return tokenizer.decode(out_ids)
 
 
 def compare_runs(
     run_paths: list[str | Path],
-    prompt: str,
+    prompt: str | None,
     n_samples: int,
     max_new_tokens: int,
     temperature: float,
