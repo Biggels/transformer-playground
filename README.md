@@ -82,3 +82,19 @@ Disable with config overrides:
 ```bash
 tp train --config configs/default.py --set tracking.auto_plot_loss=false --set tracking.auto_report=false
 ```
+
+## Early stopping
+Optional early stopping is controlled from `train.*` config fields:
+- `train.early_stopping` (default `true`)
+- `train.early_stopping_patience` (default `10` evals without improvement)
+- `train.early_stopping_min_delta` (default `0.002` minimum val-loss improvement to reset patience)
+- `train.early_stopping_min_steps` (default `800`, do not stop before this step)
+
+Example:
+```bash
+tp train --config configs/default.py \
+  --set train.early_stopping=true \
+  --set train.early_stopping_patience=8 \
+  --set train.early_stopping_min_delta=0.001 \
+  --set train.early_stopping_min_steps=500
+```

@@ -110,10 +110,15 @@ def run_training(cfg: ExperimentConfig) -> Path:
     dataset = PackedDataset(train_tokens, val_tokens, cfg.model)
 
     best_val = float("inf")
+    best_step = -1
+    evals_without_improvement = 0
+    stopped_early = False
+    final_step = -1
     t0 = time.time()
     total_tokens = 0
 
     for step in range(cfg.train.max_steps):
+        final_step = step
         lr = get_lr(step, cfg.train.max_steps, cfg.train.warmup_steps, cfg.train.lr, cfg.train.min_lr_ratio)
         for pg in optimizer.param_groups:
             pg["lr"] = lr
@@ -151,20 +156,39 @@ def run_training(cfg: ExperimentConfig) -> Path:
             stats = evaluate(model, dataset, cfg, device)
             payload: dict[str, Any] = {"step": step, **stats, "lr": lr}
             append_jsonl(run_dir / "metrics.jsonl", payload)
-            if stats["val_loss"] < best_val:
+            improved = stats["val_loss"] < (best_val - cfg.train.early_stopping_min_delta)
+            if improved:
                 best_val = stats["val_loss"]
+                best_step = step
+                evals_without_improvement = 0
                 save_checkpoint(run_dir / "checkpoints" / "best_val.pt", model, optimizer, scaler, step)
+            else:
+                evals_without_improvement += 1
+
+            if (
+                cfg.train.early_stopping
+                and step >= cfg.train.early_stopping_min_steps
+                and evals_without_improvement >= cfg.train.early_stopping_patience
+            ):
+                stopped_early = True
+                break
 
         if step % cfg.train.sample_interval == 0 or step == cfg.train.max_steps - 1:
             txt = sample_text(model, tokenizer, cfg, device)
             append_jsonl(run_dir / "samples.jsonl", {"step": step, "text": txt})
 
-    save_checkpoint(run_dir / "checkpoints" / "last.pt", model, optimizer, scaler, cfg.train.max_steps - 1)
+    if final_step < 0:
+        final_step = 0
+
+    save_checkpoint(run_dir / "checkpoints" / "last.pt", model, optimizer, scaler, final_step)
     save_json(
         run_dir / "summary.json",
         {
             "params": count_parameters(model),
             "best_val_loss": best_val,
+            "best_step": best_step,
+            "final_step": final_step,
+            "early_stopped": stopped_early,
             "config": config_to_dict(cfg),
             "run_dir": str(run_dir),
         },

@@ -58,6 +58,10 @@ class TrainConfig:
     warmup_steps: int = 100
     min_lr_ratio: float = 0.1
     amp: bool = True
+    early_stopping: bool = True
+    early_stopping_patience: int = 10
+    early_stopping_min_delta: float = 0.002
+    early_stopping_min_steps: int = 800
 
 
 @dataclass
