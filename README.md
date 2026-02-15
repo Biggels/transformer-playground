@@ -31,6 +31,7 @@ tp train --config configs/default.py --set model.mlp_enabled=false --set model.p
 ```bash
 tp generate --runs-dir runs --run-id <RUN_ID> --prompt "a" --max-new-tokens 24 --temperature 0.9 --top-p 0.9
 ```
+If you omit sampling flags, command uses the sampling values saved in that run's `config.json`.
 
 Unconditional phrase sampling (no textual prompt):
 ```bash
@@ -41,6 +42,16 @@ tp generate --runs-dir runs --run-id <RUN_ID> --unconditional --max-new-tokens 2
 ```bash
 tp compare --runs-dir runs --run-ids <RUN1>,<RUN2> --prompt "a" --n-samples 3
 ```
+
+## Report a checkpoint
+Generate a quality/overfitting report with eval stats and sampled-text metrics:
+```bash
+tp report --runs-dir runs --run-id <RUN_ID> --unconditional --n-samples 200 --max-new-tokens 24 --temperature 0.9 --top-p 0.9
+```
+If omitted, sampling flags default to the checkpoint run's saved config.
+
+The command prints a summary and saves full JSON to:
+- `runs/<run_id>/reports/report-<checkpoint>-<timestamp>.json`
 
 ## Run artifacts
 Each training run writes:

@@ -35,13 +35,18 @@ def load_artifacts(run_path: str | Path, checkpoint_name: str = "best_val.pt") -
 def generate_text(
     run_path: str | Path,
     prompt: str | None,
-    max_new_tokens: int,
-    temperature: float,
-    top_p: float,
+    max_new_tokens: int | None,
+    temperature: float | None,
+    top_p: float | None,
     checkpoint_name: str = "best_val.pt",
 ) -> str:
     cfg, model, tokenizer, device = load_artifacts(run_path, checkpoint_name=checkpoint_name)
-    del cfg
+    if max_new_tokens is None:
+        max_new_tokens = cfg.sampling.max_new_tokens
+    if temperature is None:
+        temperature = cfg.sampling.temperature
+    if top_p is None:
+        top_p = cfg.sampling.top_p
     seed_ids = tokenizer.encode(prompt) if prompt else [tokenizer.eos_id]
     x = torch.tensor([seed_ids], dtype=torch.long, device=device)
     y = model.generate(
@@ -64,9 +69,9 @@ def compare_runs(
     run_paths: list[str | Path],
     prompt: str | None,
     n_samples: int,
-    max_new_tokens: int,
-    temperature: float,
-    top_p: float,
+    max_new_tokens: int | None,
+    temperature: float | None,
+    top_p: float | None,
     checkpoint_name: str = "best_val.pt",
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []

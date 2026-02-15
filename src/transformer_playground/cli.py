@@ -5,13 +5,14 @@ from pathlib import Path
 
 from transformer_playground.config import apply_overrides, load_config
 from transformer_playground.infer import compare_runs, generate_text, resolve_run_path
+from transformer_playground.report import build_report
 from transformer_playground.train import run_training
 
 
 def _common_sampling_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--max-new-tokens", type=int, default=24)
-    parser.add_argument("--temperature", type=float, default=0.9)
-    parser.add_argument("--top-p", type=float, default=0.9)
+    parser.add_argument("--max-new-tokens", type=int, default=None)
+    parser.add_argument("--temperature", type=float, default=None)
+    parser.add_argument("--top-p", type=float, default=None)
     parser.add_argument("--checkpoint", type=str, default="best_val.pt")
 
 
@@ -37,6 +38,15 @@ def main() -> None:
     p_cmp.add_argument("--unconditional", action="store_true")
     p_cmp.add_argument("--n-samples", type=int, default=3)
     _common_sampling_args(p_cmp)
+
+    p_report = sub.add_parser("report")
+    p_report.add_argument("--run-id", type=str, required=True)
+    p_report.add_argument("--runs-dir", type=str, default="runs")
+    p_report.add_argument("--prompt", type=str, default=None)
+    p_report.add_argument("--unconditional", action="store_true")
+    p_report.add_argument("--n-samples", type=int, default=200)
+    p_report.add_argument("--eval-batches", type=int, default=32)
+    _common_sampling_args(p_report)
 
     args = parser.parse_args()
 
@@ -81,6 +91,44 @@ def main() -> None:
             print(f"=== {Path(row['run']).name} (params={row['params']}) ===")
             for i, s in enumerate(row["samples"], start=1):
                 print(f"[{i}] {s}")
+        return
+
+    if args.cmd == "report":
+        run_path = resolve_run_path(args.runs_dir, args.run_id)
+        prompt = None if args.unconditional else args.prompt
+        if prompt is None and not args.unconditional:
+            parser.error("report requires --prompt or --unconditional")
+        report, out_path = build_report(
+            run_path=run_path,
+            prompt=prompt,
+            n_samples=args.n_samples,
+            max_new_tokens=args.max_new_tokens,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            checkpoint_name=args.checkpoint,
+            eval_batches=args.eval_batches,
+            save=True,
+        )
+        metrics = report["metrics"]
+        eval_block = report["eval"]
+        print(f"run: {Path(run_path).name}")
+        print(f"checkpoint: {args.checkpoint}")
+        print(
+            "eval: "
+            f"train_loss={eval_block['train_loss']:.4f} "
+            f"val_loss={eval_block['val_loss']:.4f} "
+            f"val_ppl={eval_block['val_ppl']:.2f}"
+        )
+        print(
+            "samples: "
+            f"novel_ratio={metrics['novel_ratio']:.3f} "
+            f"exact_match_any_ratio={metrics['exact_match_any_ratio']:.3f} "
+            f"unique_ratio={metrics['unique_ratio']:.3f} "
+            f"distinct_1={metrics['distinct_1']:.3f} "
+            f"distinct_2={metrics['distinct_2']:.3f}"
+        )
+        if out_path is not None:
+            print(f"saved_report: {out_path}")
 
 
 if __name__ == "__main__":
