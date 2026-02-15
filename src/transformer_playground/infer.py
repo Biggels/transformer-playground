@@ -43,7 +43,13 @@ def generate_text(
     cfg, model, tokenizer, device = load_artifacts(run_path, checkpoint_name=checkpoint_name)
     del cfg
     x = torch.tensor([tokenizer.encode(prompt)], dtype=torch.long, device=device)
-    y = model.generate(x, max_new_tokens=max_new_tokens, temperature=temperature, top_p=top_p)
+    y = model.generate(
+        x,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        eos_token_id=tokenizer.eos_id,
+    )
     return tokenizer.decode(y[0].tolist())
 
 

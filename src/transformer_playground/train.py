@@ -58,6 +58,7 @@ def sample_text(model: DecoderLM, tokenizer: SentencePieceBPETokenizer, cfg: Exp
         max_new_tokens=cfg.sampling.max_new_tokens,
         temperature=cfg.sampling.temperature,
         top_p=cfg.sampling.top_p,
+        eos_token_id=tokenizer.eos_id,
     )
     text = tokenizer.decode(out[0].tolist())
     model.train()

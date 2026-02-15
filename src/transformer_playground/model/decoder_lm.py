@@ -69,7 +69,9 @@ class DecoderLM(nn.Module):
         max_new_tokens: int,
         temperature: float = 1.0,
         top_p: float = 1.0,
+        eos_token_id: int | None = None,
     ) -> torch.Tensor:
+        finished = torch.zeros(idx.size(0), dtype=torch.bool, device=idx.device)
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.cfg.context_length :]
             logits, _ = self(idx_cond)
@@ -91,7 +93,14 @@ class DecoderLM(nn.Module):
                     next_token = sorted_idx.gather(-1, sampled)
                 else:
                     next_token = torch.multinomial(probs, num_samples=1)
+
+            if eos_token_id is not None:
+                next_token[finished] = eos_token_id
             idx = torch.cat((idx, next_token), dim=1)
+            if eos_token_id is not None:
+                finished = finished | (next_token.squeeze(1) == eos_token_id)
+                if bool(finished.all()):
+                    break
         return idx
 
 
